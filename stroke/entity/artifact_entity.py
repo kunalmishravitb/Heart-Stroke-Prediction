@@ -1,3 +1,6 @@
+# artifact_entity will store the information for each and every components
+# All the information of config and artifact entity will be utilized in various components
+
 from dataclasses import dataclass
 
 

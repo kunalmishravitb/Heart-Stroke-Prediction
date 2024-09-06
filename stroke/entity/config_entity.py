@@ -1,3 +1,5 @@
+# config_entity will basically contain all the information for pipeline to run
+
 import os
 from stroke.constant.training_pipeline import *
 from stroke.constant.s3_bucket import TRAINING_BUCKET_NAME

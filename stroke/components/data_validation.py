@@ -22,7 +22,7 @@ class DataValidation:
         try:
             self.data_ingestion_artifact = data_ingestion_artifact
             self.data_validation_config = data_validation_config
-            self._schema_config = read_yaml_file(file_path=SCHEMA_FILE_PATH)
+            self._schema_config = read_yaml_file(file_path=SCHEMA_FILE_PATH) # It will check the data columns in schema.yaml file
         except Exception as e:
             raise HeartStrokeException(e, sys)
     
@@ -36,7 +36,7 @@ class DataValidation:
         On Failure  : Write an exception log and then raise an exception
         """
         try:
-            status = len(dataframe.columns) == len(self._schema_config["columns"])
+            status = len(dataframe.columns) == len(self._schema_config["columns"]) # Here we are checking the count of the data and based on the count we are just validating the data
             return status
         except Exception as e:
             raise HeartStrokeException(e, sys)
@@ -52,15 +52,15 @@ class DataValidation:
         """
         try:
             dataframe_columns = df.columns
-            status = True
-            missing_numerical_columns = []
+            # status = True
+            missing_numerical_columns = [] # Empty list
             for column in self._schema_config["numerical_columns"]:
                 if column not in dataframe_columns:
-                    status = False
+                    # status = False
                     missing_numerical_columns.append(column)
-            if len(missing_numerical_columns)>0:
+            if len(missing_numerical_columns) > 0:
                 logging.info(f"Missing numerical column: {missing_numerical_columns}")
-            return False if len(missing_numerical_columns)>0 else True
+            return False if len(missing_numerical_columns) > 0 else True
         except Exception as e:
             raise HeartStrokeException(e, sys) from e
 
@@ -75,26 +75,30 @@ class DataValidation:
         """
         try:
             dataframe_columns = df.columns
-            status = True
+            # status = True
             missing_categorical_columns = []
             for column in self._schema_config["categorical_columns"]:
                 if column not in dataframe_columns:
-                    status = False
+                    # status = False
                     missing_categorical_columns.append(column)
             logging.info(f"Missing categorical column: {missing_categorical_columns}")
             return False if len(missing_categorical_columns)>0 else True
         except Exception as e:
             raise HeartStrokeException(e, sys) from e
 
- 
+
+    # Read data from data ingestion artifact
     @staticmethod
     def read_data(file_path) -> DataFrame:
         try:
             return pd.read_csv(file_path)
         except Exception as e:
             raise HeartStrokeException(e, sys)
-        
 
+
+    # drift means to detect if any continuous column has any distribution or not. If the distribution is bell curved and if there is any thange in the distribution we will be utilizing evidently library to check this.
+    # If dataset drift is detected then it will be true and we will not able to pass any data. If it is false means there is no any drift detected and it will go to Data Validation Artifact.
+    # Data Validation Artifact will store the Validation status and Drift status.
     def detect_dataset_drift(self, reference_df: DataFrame, current_df: DataFrame) -> bool:
         """
         Method Name : detect_dataset_drift
@@ -109,12 +113,14 @@ class DataValidation:
             report = data_drift_profile.json()
             json_report = json.loads(report)
 
+            # This yaml will contain all the report of dataset drift
             write_yaml_file(file_path=self.data_validation_config.drift_report_file_path, content=json_report)
+            
             n_features = json_report["data_drift"]["data"]["metrics"]["n_features"]
             n_drifted_features = json_report["data_drift"]["data"]["metrics"]["n_drifted_features"]
 
             logging.info(f"{n_drifted_features}/{n_features} drift detected.")
-            drift_status = json_report["data_drift"]["data"]["metrics"]["datset_drift"]
+            drift_status = json_report["data_drift"]["data"]["metrics"]["datset_drift"] # Here it will be either true or false
             return drift_status
         except Exception as e:
             raise HeartStrokeException(e, sys) from e
@@ -123,21 +129,21 @@ class DataValidation:
     def initiate_data_validation(self) -> DataValidationArtifact:
         """
         Method Name : initiate_data_validation
-        Description : This method initiates the data validationn component for the pipeline
+        Description : This method initiates the data validation component for the pipeline
 
         Output      : Returns bool based on validation results
         On Failure  : Write an exception log and then raise an exception
         """
         try:
-            validation_error_msg = ""
+            validation_error_msg = "" # Empty string
             logging.info("Starting data validation")
             train_df, test_df = (DataValidation.read_data(file_path=self.data_ingestion_artifact.trained_file_path),
                                  DataValidation.read_data(file_path=self.data_ingestion_artifact.test_file_path))
             
             status = self.validate_number_of_columns(dataframe=train_df)
             logging.info(f"Total number of required columns present in training dataframe: {status}")
-            if not status:
-                validation_error_msg += f"Columns are missing in training dataframe."
+            if not status: # If it is false
+                validation_error_msg += f"Columns are missing in training dataframe." # This error message is getting appended from the empty string
             
             status = self.validate_number_of_columns(dataframe=test_df)
             logging.info(f"Total number of required columns present in testing dataframe: {status}")
@@ -160,14 +166,15 @@ class DataValidation:
             if not status:
                 validation_error_msg += f"Categorical columns are missing in test dataframe."
 
-            validation_status = len(validation_error_msg) == 0
-            if validation_status:
+            validation_status = len(validation_error_msg) == 0 # If it is zero then it will be true otherwise it will be false
+            if validation_status: # means if it is true
                 drift_status = self.detect_dataset_drift(train_df, test_df)
                 if drift_status:
                     logging.info(f"Data Drift detected.")
             else:
                 logging.info(f"Validation_error: {validation_error_msg}")
 
+            # All this three information should be written inside DataValidationArtifact in artifact_entity.py file
             data_validation_artifact = DataValidationArtifact(
                 validation_status=validation_status,
                 message=validation_error_msg,

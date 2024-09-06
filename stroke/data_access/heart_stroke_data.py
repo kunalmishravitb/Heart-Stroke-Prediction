@@ -8,6 +8,7 @@ from stroke.constant.database import DATABASE_NAME
 from stroke.exception import HeartStrokeException
 
 
+# This will automatically connect to mongodb and it will return collection into a dataframe
 class StrokeData:
     """
     This class help to export entire mongo db record as pandas dataframe
