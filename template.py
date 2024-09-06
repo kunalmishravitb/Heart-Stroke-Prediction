@@ -27,8 +27,6 @@ list_of_files=[
     f"stroke/constant/database.py",
     f"stroke/constant/env_variable.py",
     f"stroke/constant/s3_bucket.py",
-    f"stroke/constant/training_pipeline",
-    "config/config.yaml",
     "config/model.yaml",
     "config/schema.yaml",
     # "params.yaml",
