@@ -9,9 +9,9 @@ from sklearn.metrics import f1_score
 from stroke.exception import HeartStrokeException
 from stroke.constant.training_pipeline import TARGET_COLUMN
 from stroke.logger import logging
-from stroke.entity.s3_estimator import StrokeEstimator
+from stroke.ml.s3_estimator import StrokeEstimator
 from dataclasses import dataclass
-from stroke.entity.estimator import HeartStrokeModel
+from stroke.ml.estimator import HeartStrokeModel
 
 
 @dataclass
@@ -38,6 +38,7 @@ class ModelEvaluation:
             raise HeartStrokeException(e, sys) from e
     
 
+    # This will take the prediction model from s3 bucket
     def get_best_model(self) -> Optional[StrokeEstimator]:
         """
         Method Name : get_best_model
@@ -49,6 +50,7 @@ class ModelEvaluation:
         try:
             bucket_name = self.model_eval_config.bucket_name
             model_path = self.model_eval_config.s3_model_key_path
+            # This stroke estimator will automatically checks if the model is present and it will return the model object itself
             heart_stroke_estimator = StrokeEstimator(bucket_name=bucket_name,
                                                      model_path=model_path)
             if heart_stroke_estimator.is_model_present(model_path=model_path):
@@ -69,7 +71,7 @@ class ModelEvaluation:
         try:
             test_df = pd.read_csv(self.data_ingestion_artifact.test_file_path)
             x, y = test_df.drop(TARGET_COLUMN, axis=1), test_df[TARGET_COLUMN]
-            trained_model = load_object(file_path=self.model_trainer_artifact.trained_model_file_path)
+            # trained_model = load_object(file_path=self.model_trainer_artifact.trained_model_file_path)
             trained_model_f1_score = self.model_trainer_artifact.metric_artifact.f1_score
 
             best_model_f1_score = None
