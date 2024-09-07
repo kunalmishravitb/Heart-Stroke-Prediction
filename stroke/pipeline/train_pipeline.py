@@ -60,7 +60,7 @@ class TrainPipeline:
                 data_ingestion_artifact=data_ingestion_artifact,
                 data_validation_config=self.data_validation_config
             )
-            data_validation_artifact = data_validation.initiate_data_validation()
+            data_validation_artifact = data_validation.initiate_data_validation() # This is the function to initiate data validation
             logging.info("Performed the data validation operation")
             logging.info("Exited the start_data_validation method of TrainPipeline class")
             return data_validation_artifact
@@ -80,7 +80,7 @@ class TrainPipeline:
                 data_validation_artifact=data_validation_artifact
             )
             data_transformation_artifact = (
-                data_transformation.initiate_data_transformation()
+                data_transformation.initiate_data_transformation() # This will initiate the component
             )
             return data_transformation_artifact
         except Exception as e:

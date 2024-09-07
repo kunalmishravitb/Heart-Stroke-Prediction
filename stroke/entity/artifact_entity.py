@@ -19,13 +19,13 @@ class DataValidationArtifact:
 
 @dataclass
 class DataTransformationArtifact:
-    transformed_object_file_path: str
-    transformed_train_file_path: str
-    transformed_test_file_path: str
+    transformed_object_file_path: str # we will save pickle file
+    transformed_train_file_path: str # we will save train.npy
+    transformed_test_file_path: str # we will save test.npy
 
 
 @dataclass
-class CLassificationMetricArtifact:
+class ClassificationMetricArtifact:
     f1_score: float
     precision_score: float
     recall_score: float
@@ -34,7 +34,7 @@ class CLassificationMetricArtifact:
 @dataclass
 class ModelTrainerArtifact:
     trained_model_file_path: str
-    metric_artifact: CLassificationMetricArtifact
+    metric_artifact: ClassificationMetricArtifact
 
 
 @dataclass

@@ -3,16 +3,16 @@ import numpy as np
 import pandas as pd
 
 from typing import List, Tuple
-from stroke.entity.artifact_entity import (CLassificationMetricArtifact,
+from stroke.entity.artifact_entity import (ClassificationMetricArtifact,
                                            DataTransformationArtifact,
                                            ModelTrainerArtifact)
 from stroke.entity.config_entity import ModelTrainerConfig
-from stroke.entity.estimator import HeartStrokeModel
+from stroke.ml.estimator import HeartStrokeModel
 from stroke.exception import HeartStrokeException
 from stroke.logger import logging
 from stroke.utils.main_utils import (load_numpy_array_data, load_object,
                                      read_yaml_file, save_object)
-from neuro_mf import ModelFactory
+from neuro_mf import ModelFactory # neuro_mf means Neuro Model Factory. It will make use of model.yaml file to train the model. ModelFactory is responsible for fine tuning.
 from pandas import DataFrame
 from sklearn.metrics import (accuracy_score, f1_score, precision_score, recall_score)
 from sklearn.pipeline import Pipeline
@@ -29,6 +29,7 @@ class ModelTrainer:
         self.model_trainer_config = model_trainer_config
 
     
+    # This is used to load the model object and get the classification report out of it
     def get_model_object_and_report(self, train: np.array, test: np.array) -> Tuple[object, object]:
         """
         Method Name : get_model_object_and_report
@@ -40,15 +41,22 @@ class ModelTrainer:
         try:
             logging.info("Using neuro_mf to get best model object and report")
             model_factory = ModelFactory(model_config_path = self.model_trainer_config.model_config_file_path)
-            x_train, y_train, x_test, y_test = train[:, :-1], train[:, -1], test[:, :-1], test[:, -1]
+            # Splitting the train and test
+            x_train, y_train, x_test, y_test = (
+                train[:, :-1],
+                train[:, -1],
+                test[:, :-1],
+                test[:, -1]
+            )
             best_model_detail = model_factory.get_best_model(
                 X=x_train, y=y_train, base_accuracy=self.model_trainer_config.expected_accuracy
             )
+            # Give the best model which neuro-mf has created
             model_obj = best_model_detail.best_model
             y_pred = model_obj.predict(x_test)
             accuracy = accuracy_score(y_test, y_pred)
             recall = recall_score(y_test, y_pred)
-            metric_artifact = CLassificationMetricArtifact(f1_score=f1, precision_score=precision, recall_score=recall)
+            metric_artifact = ClassificationMetricArtifact(f1_score=f1, precision_score=precision, recall_score=recall)
             return best_model_detail, metric_artifact
         except Exception as e:
             raise HeartStrokeException(e, sys) from e
@@ -76,8 +84,10 @@ class ModelTrainer:
                                                   trained_model_object=best_model_detail.best_model)
             logging.info("Created Heart Stroke object with preprocessor and model")
             logging.info("Created best model file path.")
+            # Save the object in trained_model_file_path which we have taken from the configuration
             save_object(self.model_trainer_config.trained_model_file_path, heart_stroke_model)
 
+            # This information will be passed to the model evaluation component
             model_trainer_artifact = ModelTrainerArtifact(
                 trained_model_file_path=self.model_trainer_config.trained_model_file_path,
                 metric_artifact=metric_artifact
